@@ -11,7 +11,7 @@ const UserSchema =new mongoose.Schema({
     unique: true },
   password:{ type: String,
     required: true}
-    
+
 });
 // Like the previous challenges, we'll use the mongoose transform
 //  function to modify the results from the database and create a representation.
@@ -25,6 +25,10 @@ UserSchema.set('toObject', {
     delete ret.password;
   }
 });
+
+userSchema.methods.validatePassword = function (password) {
+    return password === this.password;
+  };
 
 const User = mongoose.model('User', UserSchema);
 
