@@ -1,7 +1,7 @@
 'use strict';
 //const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-mongoose.Promise = global.Promise;
+//mongoose.Promise = global.Promise;
 
 
 const UserSchema =new mongoose.Schema({
@@ -11,6 +11,7 @@ const UserSchema =new mongoose.Schema({
     unique: true },
   password:{ type: String,
     required: true}
+    
 });
 // Like the previous challenges, we'll use the mongoose transform
 //  function to modify the results from the database and create a representation.

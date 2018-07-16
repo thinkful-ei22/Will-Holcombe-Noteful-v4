@@ -9,7 +9,7 @@ const { PORT, MONGODB_URI } = require('./config');
 const notesRouter = require('./routes/notes');
 const foldersRouter = require('./routes/folders');
 const tagsRouter = require('./routes/tags');
-const usersRouter = require('./routes/users');
+const {router: usersRouter} = require('./routes/users');// import router as usersRouter
 // Create an Express application
 const app = express();
 
@@ -22,13 +22,16 @@ app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'common', {
 app.use(express.static('public'));
 
 // Parse request body
-app.use(express.json());
+app.use(express.json());//
+app.get('/test', function(req, res){
+  res.json({message: 'we r in'});
+});
 
 // Mount routers
 app.use('/api/notes', notesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/tags', tagsRouter);
-app.use('/api', usersRouter);
+app.use('/api/users', usersRouter);
 // Custom 404 Not Found route handler
 app.use((req, res, next) => {
   const err = new Error('Not Found');
