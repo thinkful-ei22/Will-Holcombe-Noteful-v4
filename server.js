@@ -12,9 +12,9 @@ const tagsRouter = require('./routes/tags');
 const {router: usersRouter} = require('./routes/users');// import router as usersRouter
 const passport = require('passport');
 const localStrategy = require('./passport/local');
-
+const jwtStrategy = require('./passport/jwt');
 passport.use(localStrategy);
-
+passport.use(jwtStrategy);
 
 const authRouter = require('./routes/auth');
 // Create an Express application
@@ -40,6 +40,7 @@ app.use('/api/folders', foldersRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/login', authRouter);
+
 // Custom 404 Not Found route handler
 app.use((req, res, next) => {
   const err = new Error('Not Found');

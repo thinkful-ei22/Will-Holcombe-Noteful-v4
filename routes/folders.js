@@ -7,8 +7,11 @@ const Folder = require('../models/folder');
 const Note = require('../models/note');
 
 const router = express.Router();
+const passport =  require('passport');
 
 /* ========== GET/READ ALL ITEMS ========== */
+router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
+
 router.get('/', (req, res, next) => {
 
   Folder.find()

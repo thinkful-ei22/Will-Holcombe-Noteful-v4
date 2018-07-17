@@ -396,18 +396,17 @@ const noteful = (function () {
       };
 
       api.create('/api/login', loginUser)
-        .then(response => {
-          store.authorized = true;
-          loginForm[0].reset();
-
-          store.currentUser = response;
-
-          return Promise.all([
-            api.search('/api/notes'),
-            api.search('/api/folders'),
-            api.search('/api/tags')
-          ]);
-        })
+      .then(response => {
+        store.authToken = response.authToken; // <<== add this
+        store.authorized = true;
+        loginForm[0].reset();
+  
+        return Promise.all([
+          api.search('/api/notes'),
+          api.search('/api/folders'),
+          api.search('/api/tags')
+        ]);
+      })
         .then(([notes, folders, tags]) => {
           store.notes = notes;
           store.folders = folders;
