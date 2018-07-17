@@ -1,12 +1,11 @@
 'use strict';
 //require('passport-local');
 const { Strategy: LocalStrategy } = require('passport-local');
-const User = require('../models/user');
+const { User }= require('../models/user');
 
 
 
-onst { Strategy: LocalStrategy } = require('passport-local');
-const User = require('../models/user');
+//Note: Remember to drop the users collection or delete users that have plain-text password.!!!!!
 
 // ===== Define and create basicStrategy =====
 const localStrategy = new LocalStrategy((username, password, done) => {
@@ -15,27 +14,18 @@ const localStrategy = new LocalStrategy((username, password, done) => {
     .then(results => {
       user = results;
       if (!user) {
-        return Promise.reject({
-          reason: 'LoginError',
-          message: 'Incorrect username',
-          location: 'username'
-        });
+        // Removed for brevity
       }
-      const isValid = user.validatePassword(password);
+      return user.validatePassword(password);
+    })
+    .then(isValid => {
       if (!isValid) {
-        return Promise.reject({
-          reason: 'LoginError',
-          message: 'Incorrect password',
-          location: 'password'
-        });
+        // Removed for brevity
       }
       return done(null, user);
     })
     .catch(err => {
-      if (err.reason === 'LoginError') {
-        return done(null, false);
-      }
-      return done(err);
+      // Removed for brevity
     });
 });
 

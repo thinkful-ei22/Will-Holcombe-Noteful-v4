@@ -10,6 +10,13 @@ const notesRouter = require('./routes/notes');
 const foldersRouter = require('./routes/folders');
 const tagsRouter = require('./routes/tags');
 const {router: usersRouter} = require('./routes/users');// import router as usersRouter
+const passport = require('passport');
+const localStrategy = require('./passport/local');
+
+passport.use(localStrategy);
+
+
+const authRouter = require('./routes/auth');
 // Create an Express application
 const app = express();
 
@@ -23,15 +30,16 @@ app.use(express.static('public'));
 
 // Parse request body
 app.use(express.json());//
-app.get('/test', function(req, res){
-  res.json({message: 'we r in'});
-});
+// app.get('/test', function(req, res){
+//   res.json({message: 'we r in'});
+// });
 
 // Mount routers
 app.use('/api/notes', notesRouter);
 app.use('/api/folders', foldersRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/login', authRouter);
 // Custom 404 Not Found route handler
 app.use((req, res, next) => {
   const err = new Error('Not Found');
@@ -41,10 +49,12 @@ app.use((req, res, next) => {
 
 // Custom Error Handler
 app.use((err, req, res, next) => {
+ // console.log(err);******
   if (err.status) {
     const errBody = Object.assign({}, err, { message: err.message });
     res.status(err.status).json(errBody);
   } else {
+
     res.status(500).json({ message: 'Internal Server Error' });
   }
 });
