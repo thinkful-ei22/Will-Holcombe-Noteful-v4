@@ -13,8 +13,8 @@ const passport =  require('passport');
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 router.get('/', (req, res, next) => {
-
-  Folder.find()
+const userId = req.user.id;// or remove id if destructure
+  Folder.find({userId})
     .sort('name')
     .then(results => {
       res.json(results);
@@ -27,14 +27,14 @@ router.get('/', (req, res, next) => {
 /* ========== GET/READ A SINGLE ITEM ========== */
 router.get('/:id', (req, res, next) => {
   const { id } = req.params;
-
+  const { userId }= req.user;
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
     return next(err);
   }
 
-  Folder.findById(id)
+  Folder.findById({_id: id, userId})
     .then(result => {
       if (result) {
         res.json(result);
@@ -50,9 +50,9 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { name } = req.body;
-
-  const newFolder = { name };
-
+  const { userId } = req.user;
+  const newFolder = { name, userId };
+ 
   /***** Never trust users - validate input *****/
   if (!name) {
     const err = new Error('Missing `name` in request body');
@@ -77,6 +77,7 @@ router.post('/', (req, res, next) => {
 router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
+  const { userId } = req.user;
 
   /***** Never trust users - validate input *****/
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -93,7 +94,7 @@ router.put('/:id', (req, res, next) => {
 
   const updateFolder = { name };
 
-  Folder.findByIdAndUpdate(id, updateFolder, { new: true })
+  Folder.findByIdAndUpdate({_id: id, userId}, updateFolder, { new: true })
     .then(result => {
       if (result) {
         res.json(result);
@@ -113,7 +114,7 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
-
+const { userId } = req.user;
   /***** Never trust users - validate input *****/
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
@@ -121,7 +122,7 @@ router.delete('/:id', (req, res, next) => {
     return next(err);
   }
 
-  const folderRemovePromise = Folder.findByIdAndRemove(id);
+  const folderRemovePromise = Folder.findByIdAndRemove({_id: id, userId});
 
   const noteRemovePromise = Note.updateMany(
     { folderId: id },

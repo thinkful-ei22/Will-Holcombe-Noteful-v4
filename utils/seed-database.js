@@ -44,5 +44,4 @@ mongoose.connect(MONGODB_URI)
   })
   .catch(err => {
     console.error(err);
-    return mongoose.disconnect();
   });
