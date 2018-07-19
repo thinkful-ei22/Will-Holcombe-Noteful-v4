@@ -7,9 +7,14 @@ const express = require('express');
 
 const app = require('../server');
 const Folder = require('../models/folder');
+const { User } = require('../models/user');
 const seedFolders = require('../db/seed/folders');
+const seedUsers = require('../db/seed/users');
 const { TEST_MONGODB_URI } = require('../config');
 
+const {JWT_SECRET} = require('../config');
+const {JWT_EXPIRY} = require('../config');
+const jwt = require('jsonwebtoken');
 chai.use(chaiHttp);
 const expect = chai.expect;
 
@@ -20,11 +25,23 @@ describe('Noteful API - Folders', function () {
       .then(() => mongoose.connection.db.dropDatabase());
   });
 
+  let token; 
+  let user;
+
   beforeEach(function () {
     return Promise.all([
+      User.insertMany(seedUsers),
       Folder.insertMany(seedFolders),
       Folder.createIndexes()
-    ]);
+    ])
+      .then(([users]) => {
+        user = users[0];
+        token = jwt.sign({ user }, JWT_SECRET, {
+          subject: user.username,
+          expiresIn: JWT_EXPIRY
+        });
+
+      });
   });
 
   afterEach(function () {
@@ -37,82 +54,84 @@ describe('Noteful API - Folders', function () {
 
   describe('GET /api/folders', function () {
 
-    it('should return a list sorted by name with the correct number of folders', function () {
-      return Promise.all([
-        Folder.find().sort('name'),
-        chai.request(app).get('/api/folders')
-      ])
-        .then(([data, res]) => {
-          expect(res).to.have.status(200);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(data.length);
-        });
-    });
+    it('should return a list sorted by name with the correct number of folders', 
+      function () {
 
-    it('should return a list with the correct fields and values', function () {
-      return Promise.all([
-        Folder.find().sort('name'),
-        chai.request(app).get('/api/folders')
-      ])
-        .then(([data, res]) => {
-          expect(res).to.have.status(200);
-          expect(res).to.be.json;
-          expect(res.body).to.be.a('array');
-          expect(res.body).to.have.length(data.length);
-          res.body.forEach(function (item, i) {
-            expect(item).to.be.a('object');
-            expect(item).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-            expect(item.id).to.equal(data[i].id);
-            expect(item.name).to.equal(data[i].name);
-            expect(new Date(item.createdAt)).to.eql(data[i].createdAt);
-            expect(new Date(item.updatedAt)).to.eql(data[i].updatedAt);
+      
+        const dbPromise = Folder.find({userId: user.id });
+        const apiPromise = chai.request(app)
+          .get('/api/folders')
+          .set('Authorization', `Bearer ${token}`); // <<== Add this
+
+        return Promise.all([dbPromise, apiPromise])
+          .then(([data, res]) => {
+            expect(res).to.have.status(200);
+            expect(res).to.be.json;
+            expect(res.body).to.be.a('array');
+            expect(res.body).to.have.length(data.length);
           });
-        });
-    });
+      });
 
+    it.only('should return a list with the correct fields and values', function () {
+      
+        const dbPromise = Folder.find({ userId: user.id }); // <<== Add filter on User Id
+        const apiPromise = chai.request(app)
+          .get('/api/folders')
+          .set('Authorization', `Bearer ${token}`); // <<== Add Authorization header
+    
+        return Promise.all([dbPromise, apiPromise])
+          .then(([data, res]) => {
+            expect(res).to.have.status(200);
+            expect(res).to.be.json;
+            expect(res.body).to.be.a('array');
+            res.body.forEach(function (item) {
+              expect(item).to.be.a('object');
+              expect(item).to.have.keys('id', 'name', 'userId', 'createdAt', 'updatedAt');  // <<== Update assertion
+            });
+          });
+      });
+
+
+describe('GET /api/folders/:id', function () {
+
+  it('should return correct folder', function () {
+    let data;
+    return Folder.findOne()
+      .then(_data => {
+        data = _data;
+        return chai.request(app).get(`/api/folders/${data.id}`);
+      })
+      .then((res) => {
+        expect(res).to.have.status(200);
+        expect(res).to.be.json;
+        expect(res.body).to.be.an('object');
+        expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
+        expect(res.body.id).to.equal(data.id);
+        expect(res.body.name).to.equal(data.name);
+        expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
+        expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
+      });
   });
 
-  describe('GET /api/folders/:id', function () {
-
-    it('should return correct folder', function () {
-      let data;
-      return Folder.findOne()
-        .then(_data => {
-          data = _data;
-          return chai.request(app).get(`/api/folders/${data.id}`);
-        })
-        .then((res) => {
-          expect(res).to.have.status(200);
-          expect(res).to.be.json;
-          expect(res.body).to.be.an('object');
-          expect(res.body).to.have.all.keys('id', 'name', 'createdAt', 'updatedAt');
-          expect(res.body.id).to.equal(data.id);
-          expect(res.body.name).to.equal(data.name);
-          expect(new Date(res.body.createdAt)).to.eql(data.createdAt);
-          expect(new Date(res.body.updatedAt)).to.eql(data.updatedAt);
-        });
-    });
-
-    it('should respond with a 400 for an invalid id', function () {
-      return chai.request(app)
-        .get('/api/folders/NOT-A-VALID-ID')
-        .then(res => {
-          expect(res).to.have.status(400);
-          expect(res.body.message).to.equal('The `id` is not valid');
-        });
-    });
-
-    it('should respond with a 404 for an ID that does not exist', function () {
-      // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
-      return chai.request(app)
-        .get('/api/folders/DOESNOTEXIST')
-        .then(res => {
-          expect(res).to.have.status(404);
-        });
-    });
-
+  it('should respond with a 400 for an invalid id', function () {
+    return chai.request(app)
+      .get('/api/folders/NOT-A-VALID-ID')
+      .then(res => {
+        expect(res).to.have.status(400);
+        expect(res.body.message).to.equal('The `id` is not valid');
+      });
   });
+
+  it('should respond with a 404 for an ID that does not exist', function () {
+    // The string "DOESNOTEXIST" is 12 bytes which is a valid Mongo ObjectId
+    return chai.request(app)
+      .get('/api/folders/DOESNOTEXIST')
+      .then(res => {
+        expect(res).to.have.status(404);
+      });
+  });
+});
+ 
 
   describe('POST /api/folders', function () {
 
@@ -279,4 +298,5 @@ describe('Noteful API - Folders', function () {
 
   });
 
+});
 });
