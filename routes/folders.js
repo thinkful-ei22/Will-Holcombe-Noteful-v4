@@ -13,7 +13,7 @@ const passport =  require('passport');
 router.use('/', passport.authenticate('jwt', { session: false, failWithError: true }));
 
 router.get('/', (req, res, next) => {
-const userId = req.user.id;// or remove id if destructure
+  const userId = req.user.id;// or remove id if destructure
   Folder.find({userId})
     .sort('name')
     .then(results => {
@@ -31,6 +31,7 @@ router.get('/:id', (req, res, next) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
     err.status = 400;
+    //console.log(err.message);
     return next(err);
   }
 
@@ -50,7 +51,7 @@ router.get('/:id', (req, res, next) => {
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
   const { name } = req.body;
-  const { userId } = req.user;
+  const  userId  = req.user.id;
   const newFolder = { name, userId };
  
   /***** Never trust users - validate input *****/
@@ -114,7 +115,7 @@ router.put('/:id', (req, res, next) => {
 /* ========== DELETE/REMOVE A SINGLE ITEM ========== */
 router.delete('/:id', (req, res, next) => {
   const { id } = req.params;
-const { userId } = req.user;
+  const { userId } = req.user;
   /***** Never trust users - validate input *****/
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
