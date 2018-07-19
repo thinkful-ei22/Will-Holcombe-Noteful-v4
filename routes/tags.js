@@ -13,9 +13,9 @@ router.use('/', passport.authenticate('jwt', { session: false, failWithError: tr
 
 /* ========== GET/READ ALL ITEMS ========== */
 router.get('/', (req, res, next) => {
-  const { userId } = req.user;
+  const userId  = req.user.id;
   
-  Tag.find(userId)
+  Tag.find({userId})
     .sort('name')
     .then(results => {
       res.json(results);
