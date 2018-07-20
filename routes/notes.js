@@ -13,15 +13,21 @@ function validateFolderId(folderId, userId) {
     return Promise.resolve();
   }
   if (!mongoose.Types.ObjectId.isValid(folderId)) {
+    //console.log(folderId);
+    
     const err = new Error('The `folderId` is not valid');
     err.status = 400;
+
     return Promise.reject(err);
   }
   return Folder.count({ _id: folderId, userId })
     .then(count => {
+      console.log(count);
+      
       if (count === 0) {
         const err = new Error('The `folderId` is not valid');
         err.status = 400;
+        console.log('ERROR VALIDATE BLOCK', err );
         return Promise.reject(err);
       }
     });
@@ -44,7 +50,10 @@ function validateTagIds(tags, userId) {
         err.status = 400;
         return Promise.reject(err);
       }
+      return Promise.resolve();
+      
     });
+    
 }
 
 
@@ -114,38 +123,42 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, folderId, tags } = req.body;
+  const { title, content, folderId, tags=[] } = req.body;
   const userId = req.user.id;
- 
+  const newNote = { title, content, folderId, tags, userId };
   // For folders, verify the folderId is a valid ObjectId and the item belongs to 
   // the current user. If the validation fails, then return an 
   // error message 'The folderId is not valid' with status 400.
 
-  if(folderId)
+  
   /***** Never trust users - validate input *****/
-    if (!title) {
-      const err = new Error('Missing `title` in request body');
-      err.status = 400;
-      return next(err);
-    }
-
+  if (!title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
+  // if (mongoose.Types.ObjectId.isValid(folderId)) {
+  //   newNote.folderId = folderId;
+  // }
   Promise.all([
     validateFolderId(folderId, userId),
     validateTagIds(tags, userId)
-  ]);
+  ])
 
-  const newNote = { title, content, folderId, tags, userId };
-
-  Note.create(newNote)
+ //if all on one line then dont need return statment
+    .then(()=> Note.create(newNote))
     .then(result => {
+      //console.log(res.title);
       res
         .location(`${req.originalUrl}/${result.id}`)
         .status(201)
         .json(result);
     })
     .catch(err => {
+      console.log('CATCH BLOCK ERROR', err);
       next(err);
     });
+    
 });
 
 /* ========== PUT/UPDATE A SINGLE ITEM ========== */

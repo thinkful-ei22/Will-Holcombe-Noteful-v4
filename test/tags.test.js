@@ -21,7 +21,7 @@ const jwt = require('jsonwebtoken');
 chai.use(chaiHttp);
 const expect = chai.expect;
 
-describe.only('Noteful API - Tags', function () {
+describe('Noteful API - Tags', function () {
 
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
