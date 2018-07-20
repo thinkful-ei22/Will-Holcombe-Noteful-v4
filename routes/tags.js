@@ -80,16 +80,33 @@ router.put('/:id', (req, res, next) => {
   const { id } = req.params;
   const { name } = req.body;
   const { userId } = req.user;
+
   /***** Never trust users - validate input *****/
+//why you don't need tag id
+
   if (!mongoose.Types.ObjectId.isValid(id)) {
     const err = new Error('The `id` is not valid');
+   
     err.status = 400;
     return next(err);
   }
+  // return Tag.count({ _id: tagId, userId })
+  //   .then(count => {
+      
+      
+  //     if (count === 0) {
+  //       const err = new Error('The `tagId` is not valid');
+  //       err.status = 400;
+        
+  //       return next(err);
+  //     }
+  //   });
+
 
   if (!name) {
     const err = new Error('Missing `name` in request body');
     err.status = 400;
+    
     return next(err);
   }
 
@@ -106,6 +123,7 @@ router.put('/:id', (req, res, next) => {
     .catch(err => {
       if (err.code === 11000) {
         err = new Error('Tag name already exists');
+        //console.log(err);
         err.status = 400;
       }
       next(err);

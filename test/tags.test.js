@@ -153,7 +153,7 @@ describe('Noteful API - Tags', function () {
         .then(function (res) {
           
           body = res.body;
-          console.log(body.id);
+          
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
           expect(res).to.be.json;
@@ -276,8 +276,9 @@ describe('Noteful API - Tags', function () {
 
     it('should return an error when given a duplicate name', function () {
       //why no { userId: user.id } below?
-      return Tag.find().limit(2)
+      return Tag.find({ userId: user.id }).limit(2)
         .then(results => {
+          //console.log(results)
           const [item1, item2] = results;
           item1.name = item2.name;
           return chai.request(app)

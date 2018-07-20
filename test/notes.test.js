@@ -24,7 +24,7 @@ const seedUsers = require('../db/seed/users');
 chai.use(chaiHttp);
 const expect = chai.expect;
 
-describe.only('Noteful API - Notes', function () {
+describe('Noteful API - Notes', function () {
 
   before(function () {
     return mongoose.connect(TEST_MONGODB_URI)
@@ -89,15 +89,19 @@ describe.only('Noteful API - Notes', function () {
     });
 
     it('should return a list with the correct right fields', function () {
-      const dbPromise = Note.find({ userId: user.id }); // <<== Add filter on User Id
+      const dbPromise = Note.find({ userId: user.id })
+        .sort({ updatedAt: 'desc' }); // <<== Add filter on User Id
       const apiPromise = chai.request(app)
         .get('/api/notes')
+        
         .set('Authorization', `Bearer ${token}`); 
 
       return Promise.all([dbPromise, apiPromise])
         .then(([data, res]) => {
+          
           expect(res).to.have.status(200);
           expect(res).to.be.json;
+          
           expect(res.body).to.be.a('array');
           expect(res.body).to.have.length(data.length);
           res.body.forEach(function (item, i) {
@@ -165,7 +169,7 @@ describe.only('Noteful API - Notes', function () {
         });
     });
 
-    it.only('should return correct search results for a tagId query', function () {
+    it('should return correct search results for a tagId query', function () {
       let data;
       return Tag.findOne({userId: user.id})
         .then((_data) => {
