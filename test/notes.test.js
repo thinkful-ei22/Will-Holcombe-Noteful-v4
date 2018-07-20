@@ -103,7 +103,7 @@ describe.only('Noteful API - Notes', function () {
           res.body.forEach(function (item, i) {
             expect(item).to.be.a('object');
             // Note: folderId and content are optional
-            expect(item).to.include.all.keys('id', 'title', 'createdAt', 'updatedAt', 'tags');
+            expect(item).to.include.all.keys('id', 'title', 'userId', 'createdAt', 'updatedAt', 'tags');
             //console.log(item.id);
             expect(item.id).to.equal(data[i].id);
             expect(item.title).to.equal(data[i].title);
@@ -165,7 +165,7 @@ describe.only('Noteful API - Notes', function () {
         });
     });
 
-    it('should return correct search results for a tagId query', function () {
+    it.only('should return correct search results for a tagId query', function () {
       let data;
       return Tag.findOne({userId: user.id})
         .then((_data) => {
@@ -218,7 +218,7 @@ describe.only('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.an('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'folderId', 'tags');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(data.title);
           expect(res.body.content).to.equal(data.content);
@@ -264,12 +264,12 @@ describe.only('Noteful API - Notes', function () {
         
         .then(function (_res) {
           res = _res;
-          console.log(res);
+          //console.log(res);
           expect(res).to.have.status(201);
           expect(res).to.have.header('location');
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'tags');
           return Note.findById(res.body.id);
         })
         .then(data => {
@@ -329,15 +329,15 @@ describe.only('Noteful API - Notes', function () {
           expect(res).to.have.status(400);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body.message).to.equal('The tags `id` is not valid');
+          expect(res.body.message).to.equal('Invalid tag ID');
         });
     });
 
   });
 
-  describe.only('PUT /api/notes/:id', function () {
+  describe('PUT /api/notes/:id', function () {
 
-    it.only('should update the note when provided valid data', function () {
+    it('should update the note when provided valid data', function () {
       const updateItem = {
         title: 'What about dogs?!',
         content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor...'
@@ -355,7 +355,8 @@ describe.only('Noteful API - Notes', function () {
           expect(res).to.have.status(200);
           expect(res).to.be.json;
           expect(res.body).to.be.a('object');
-          expect(res.body).to.have.all.keys('id', 'title', 'content', 'createdAt', 'updatedAt', 'folderId', 'tags');
+          expect(res.body).to.have.all.keys('id', 'title', 'content', 'userId', 
+            'createdAt', 'updatedAt', 'folderId', 'tags');
           expect(res.body.id).to.equal(data.id);
           expect(res.body.title).to.equal(updateItem.title);
           expect(res.body.content).to.equal(updateItem.content);

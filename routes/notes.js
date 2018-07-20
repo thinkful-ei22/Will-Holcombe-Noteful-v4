@@ -10,24 +10,25 @@ const passport =  require('passport');
 
 function validateFolderId(folderId, userId) {
   if (folderId === undefined) {
+    // console.log('HELLO');
     return Promise.resolve();
   }
   if (!mongoose.Types.ObjectId.isValid(folderId)) {
-    //console.log(folderId);
+    
     
     const err = new Error('The `folderId` is not valid');
     err.status = 400;
-
+    //console.log('ERROR FOLDER BLOCK', err);
     return Promise.reject(err);
   }
   return Folder.count({ _id: folderId, userId })
     .then(count => {
-      console.log(count);
+      
       
       if (count === 0) {
         const err = new Error('The `folderId` is not valid');
         err.status = 400;
-        console.log('ERROR VALIDATE BLOCK', err );
+        
         return Promise.reject(err);
       }
     });
@@ -48,9 +49,10 @@ function validateTagIds(tags, userId) {
       if(results ===undefined||tags.length !== results.length) {
         const err = new Error('The `tags` array contains an invalid id');
         err.status = 400;
+        //console.log('ERROR TAGS', err);
         return Promise.reject(err);
       }
-      return Promise.resolve();
+      // return Promise.resolve();
       
     });
     
@@ -68,7 +70,7 @@ router.get('/', (req, res, next) => {
   //const { id } = req.params;
   const userId = req.user.id;
 
-  const { searchTerm, folderId, tags} = req.query;
+  const { searchTerm, folderId, tagId} = req.query;
 
   let filter = { userId };//not _id: userId etc.
   
@@ -81,8 +83,9 @@ router.get('/', (req, res, next) => {
     filter.folderId = folderId;
   }
 
-  if (tags) {
-    filter.tags = tags;
+  if (tagId) {
+    // filter.tags = tags;
+    filter.tags = tagId;
   }
 
   Note.find(filter)
@@ -123,8 +126,10 @@ router.get('/:id', (req, res, next) => {
 
 /* ========== POST/CREATE AN ITEM ========== */
 router.post('/', (req, res, next) => {
-  const { title, content, folderId, tags=[] } = req.body;
+  //tags default to empty if no value passed in
+  const { title, content, tags=[] } = req.body;
   const userId = req.user.id;
+  const folderId = req.body.folderId ? req.body.folderId : undefined;
   const newNote = { title, content, folderId, tags, userId };
   // For folders, verify the folderId is a valid ObjectId and the item belongs to 
   // the current user. If the validation fails, then return an 
@@ -137,15 +142,25 @@ router.post('/', (req, res, next) => {
     err.status = 400;
     return next(err);
   }
-  // if (mongoose.Types.ObjectId.isValid(folderId)) {
-  //   newNote.folderId = folderId;
-  // }
+  if (mongoose.Types.ObjectId.isValid(folderId)) {
+    newNote.folderId = folderId;
+  }
+  //if (mongoose.Types.ObjectId.isValid(tagsId)) {
+  //newNote.tagsId = tagsId;
+  tags.forEach( tag => { if(!mongoose.Types.ObjectId.isValid(tag.id)){
+    const err = new Error('Invalid tag ID');
+    err.status = 400;
+    return next(err);
+  }
+  });
+  
+
   Promise.all([
     validateFolderId(folderId, userId),
     validateTagIds(tags, userId)
   ])
 
- //if all on one line then dont need return statment
+  //if all on one line then dont need return statment
     .then(()=> Note.create(newNote))
     .then(result => {
       //console.log(res.title);
@@ -155,7 +170,7 @@ router.post('/', (req, res, next) => {
         .json(result);
     })
     .catch(err => {
-      console.log('CATCH BLOCK ERROR', err);
+      //console.log('CATCH BLOCK ERROR', err);
       next(err);
     });
     
